@@ -1,10 +1,4 @@
 module.exports = async function (page, options = {}) {
-    const a = {
-        input: 'input#url.form-control',
-        button: 'button.btn.btn-warning',
-        table_download: 'div.col-md-7.col-sm-12.mt-4.d-flex.flex-column',
-        url_download: 'https://fpttelecom.com/wp-content/plugins/aio-video-downloader/download.php'
-    }
     try {
         await page.waitForSelector(options.input)
         await page.click(options.input)
