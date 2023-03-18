@@ -5,18 +5,14 @@ module.exports = async function (page, options = {}) {
         const inputElement = await page.$(options.input)
         await inputElement.type(options.url)
         await page.click(options.button)
-        await page.waitForSelector(options.table_download, { timeout: 120000 })
-        const quality = await page.evaluate((selector) => {
-            const quality = document.querySelector(selector)
-            quality.target = ''
-            quality.click()
-            return quality.textContent
-        }, `${options.table_download} > a`)
-        await page.waitForResponse((res) => {
-            return res.url().includes(options.url_download)
-        })
-        await page.goto('chrome://downloads/')
-        return quality
+        await page.waitForSelector(options.selector_download, { timeout: 120000 })
+        let fileName = await page.evaluate(selector => {
+            let element = document.querySelector(selector)
+            element.click()
+            return element.getAttribute('_name') ? element.getAttribute('_name') : ''
+        }, options.selector_download)
+        // await page.goto('chrome://downloads/')
+        return fileName
     } catch (error) {
         console.log(error);
     }

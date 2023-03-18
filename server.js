@@ -12,54 +12,77 @@ const bot = new telegramBot(process.env.TELEGRAM_API_TOKEN, { polling: true })
 
 bot.onText(/\/ls/, (msg, data) => {
     if (data.input.split(data[0])[1] && !data.input.split(' ')[1]) {
-        bot.sendMessage(msg.chat.id, `Có phải ý bạn là /upload ?`)
+        bot.sendMessage(msg.chat.id, `Có phải ý bạn là /ls ?`)
         return
     }
     if (data.index !== 0) {
-       return
+        return
     }
-    const isValue = data.input.split(data[0])[1]
     fs.readdir(process.env.PATH_DOWNLOAD_FILE, (err, data) => {
-        if(err) {
+        if (err) {
             bot.sendMessage(msg.chat.id, JSON.stringify(err))
             return
         }
-        for (const file of data) {
-            bot.sendMessage(msg.chat.id, JSON.stringify(file))
+        const isFile = data.filter(file => file.includes('fpttelecom') && file.includes('.mp4'))
+        if (isFile.length === 0) {
+            bot.sendMessage(msg.chat.id, `no files found`)
+        } else {
+            isFile.forEach(file => bot.sendMessage(msg.chat.id, JSON.stringify(file)))
         }
     })
 })
+
 bot.onText(/\/clearFile/, (msg, data) => {
     if (data.input.split(data[0])[1] && !data.input.split(' ')[1]) {
         // bot.sendMessage(msg.chat.id, `Có phải ý bạn là /upload ?`)
         return
     }
     if (data.index !== 0) {
-       return
+        return
     }
-    const isValue = data.input.split(data[0])[1]
     fs.readdir(process.env.PATH_DOWNLOAD_FILE, (err, data) => {
-        if(err) {
+        if (err) {
             bot.sendMessage(msg.chat.id, JSON.stringify(err))
             return
         }
         const isFileTrash = data.filter(file => file.includes('fpttelecom') && file.includes('.mp4'))
-        if(!isFileTrash) {
+        if (isFileTrash.length === 0) {
             bot.sendMessage(msg.chat.id, `no more files to delete`)
             return
-        }
-        isFileTrash.forEach(file => {
-            fs.unlink(`${process.env.PATH_DOWNLOAD_FILE}/${file}`, err => {
-                err ? bot.sendMessage(msg.chat.id, JSON.stringify(err)) : bot.sendMessage(msg.chat.id, `remove sucess File: ${file}`)
+        } else {
+            const inline_keyboard = []
+            isFileTrash.forEach(file => {
+                console.log(file)
+                inline_keyboard.push([{ text: file, callback_data: file }])
             })
-        })
+            bot.sendMessage(msg.chat.id, `Bạn muốn xóa file nào ?`, {
+                reply_markup: {
+                    inline_keyboard
+                }
+            })
+        }
     })
 })
+bot.on('callback_query', (query) => {
+    const fileName = query.data;
+    const chatId = query.message.chat.id;
+    const messageId = query.message.message_id;
+    fs.unlink(`${process.env.PATH_DOWNLOAD_FILE}${fileName}`, (err) => {
+        err ? bot.editMessageText(`Xóa file ${fileName} không thành công đã có lỗi xảy ra`, {
+            chat_id: chatId,
+            message_id: messageId
+        }) : bot.editMessageText(`Đã xóa file ${fileName}`, {
+            chat_id: chatId,
+            message_id: messageId
+        })
+    })
+});
 bot.onText(/\/start/, (msg, data) => {
     if (data.input.split(' ')[0].split(data[0])[1]) {
         bot.sendMessage(msg.chat.id, `Có Phải ý bạn là /start ?`, { reply_to_message_id: msg.message_id })
         return
     }
+
     bot.sendMessage(msg.chat.id, `Đây là các lệnh với Bot
     Gõ /upload [(URL video muốn đăng) (|) (Nội dung cho video)]`)
 })
@@ -95,27 +118,23 @@ bot.onText(/\/upload/, async (msg, data) => {
         const page = await browser.newPage()
         await page.goto(process.env.FPT_URL)
         bot.sendMessage(msg.chat.id, `Bắt đầu quá trình xóa logo`, { reply_to_message_id: msg.message_id })
-        const quality = await download_video_no_logo(page, {
+        fileName = await download_video_no_logo(page, {
             url,
-            input: 'input#url.form-control',
-            button: 'button.btn.btn-warning',
-            table_download: 'div.col-md-7.col-sm-12.mt-4.d-flex.flex-column',
-            url_download: 'https://fpttelecom.com/wp-content/plugins/aio-video-downloader/download.php'
+            input: 'input#url',
+            button: 'button#submit-form',
+            // table_download: 'div.group-download > div',
+            selector_download: 'a#tt2-no-watermark-mp4-hd[_name]',
+            // url_download: 'https://fpttelecom.com/wp-content/plugins/aio-video-downloader/download.php'
         })
-        fileName = await check_file_and_wait_download(process.env.PATH_DOWNLOAD_FILE, `fpttelecom.mp4`)
-        if (!quality) {
-            bot.sendMessage(msg.chat.id, `Xóa logo không thành công`, { reply_to_message_id: msg.message_id })
-        }
-        bot.sendMessage(msg.chat.id, `Đã xóa logo thành công`, { reply_to_message_id: msg.message_id })
-        const heavyFile = Number(quality.match(/\d+\.\d+/)[0])
-        if (quality?.toLocaleLowerCase().includes('gb') && heavyFile <= 2) {
+        const isFile = await check_file_and_wait_download(process.env.PATH_DOWNLOAD_FILE, fileName)
+        if(isFile) {
+            fileName = isFile
+            bot.sendMessage(msg.chat.id, `Xóa logo thành công`, { reply_to_message_id: msg.message_id })
+        } else {
             await browser.close()
-            bot.sendMessage(msg.chat.id, `File quá nặng không thể upload`, { reply_to_message_id: msg.message_id })
+            bot.sendMessage(msg.chat.id, `Xóa logo không thành công`, { reply_to_message_id: msg.message_id })
+            return
         }
-        if (heavyFile >= 20) {
-            bot.sendMessage(msg.chat.id, `File ${quality} khá nặng quá trình upload hơi lâu vui lòng thông cảm`, { reply_to_message_id: msg.message_id })
-        }
-        await page.goto('chrome://downloads/')
         if (fileName) {
             bot.sendMessage(msg.chat.id, `Bắt đầu upload video`, { reply_to_message_id: msg.message_id })
             await page.goto(process.env.URL_UPLOAD_VIDEO_TIKTOK)

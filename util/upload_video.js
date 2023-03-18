@@ -31,8 +31,8 @@ module.exports = async function (page, options) {
             isComment.click()
             return
         })
-        const btnSubmit = await iframe.$(options.button_upload)
-        btnSubmit.click()
+        await iframe.waitForSelector(options.button_upload)
+        await iframe.click(options.button_upload)
         await iframe.waitForSelector(options.modal, { timeout: 120000 })
         return true
     } catch (error) {
