@@ -83,8 +83,7 @@ bot.onText(/\/start/, (msg, data) => {
         return
     }
 
-    bot.sendMessage(msg.chat.id, `Đây là các lệnh với Bot
-    Gõ /upload [(URL video muốn đăng) (|) (Nội dung cho video)]`)
+    bot.sendMessage(msg.chat.id, `Đây là các lệnh với Bot: Nhập /upload - upload video lên tiktok`)
 })
 
 
@@ -106,9 +105,10 @@ bot.onText(/\/upload/, async (msg, data) => {
     if (!url && !content.length >= 2) {
         instruction_message(bot, msg.chat.id)
     }
-    let fileName = `Quis_dev.txt`
+    let fileName = `Quis_dev.mp4`
+    bot.sendMessage(msg.chat.id, `Bắt đầu quá trình xoá logo video`, { reply_to_message_id: msg.message_id })
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         executablePath: process.env.PATH_CHROME,
         userDataDir: process.env.PATH_DATA_CHROME,
         ignoreHTTPSErrors: true,
@@ -117,14 +117,12 @@ bot.onText(/\/upload/, async (msg, data) => {
     try {
         const page = await browser.newPage()
         await page.goto(process.env.FPT_URL)
-        bot.sendMessage(msg.chat.id, `Bắt đầu quá trình xóa logo`, { reply_to_message_id: msg.message_id })
         fileName = await download_video_no_logo(page, {
             url,
             input: 'input#url',
             button: 'button#submit-form',
-            // table_download: 'div.group-download > div',
             selector_download: 'a#tt2-no-watermark-mp4-hd[_name]',
-            // url_download: 'https://fpttelecom.com/wp-content/plugins/aio-video-downloader/download.php'
+            dir: downloadPath
         })
         const isFile = await check_file_and_wait_download(process.env.PATH_DOWNLOAD_FILE, fileName)
         if(isFile) {
