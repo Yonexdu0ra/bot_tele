@@ -16,6 +16,6 @@ module.exports = function (pathFile, filename, timeCheck = 2000) {
                             resolve(isDown)
                       }
                 })
-          }, 2000)
+          }, timeCheck)
     })
 }

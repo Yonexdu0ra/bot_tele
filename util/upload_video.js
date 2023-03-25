@@ -1,5 +1,12 @@
+const checkLoginTiktok = require('./check_login')
 module.exports = async function (page, options) {
     try {
+        await page.goto(process.env.URL_UPLOAD_VIDEO_TIKTOK)
+        const isLogin = await checkLoginTiktok(page)
+        if(!isLogin) {
+            console.log(`Yêu cầu đăng nhập sẵn Tiktok trên trình duyệt Chorme`)
+            return false
+        }
         await page.waitForSelector('iframe')
         const iframe = await page.frames().find(f => {
             return f.url().includes(options.creator)
@@ -10,11 +17,8 @@ module.exports = async function (page, options) {
                 const input = iframe.querySelector('input')
                 input.style.display = 'block'
             })
-            return new Promise(resolve => {
-                setTimeout(resolve, 1000)
-            })
+            return 
         })
-        // await iframe.waitForSelector(`input[style="display: block"]`)
         const inputElement = await iframe.$(options.input)
         await inputElement.uploadFile(options.path_video)
         await iframe.waitForSelector(options.preview, { timeout: `${60 * 5000}` })
@@ -28,7 +32,7 @@ module.exports = async function (page, options) {
             const [isComment, isDuet, isStitch] = [...document.querySelectorAll('label')]
             isStitch.click()
             isDuet.click()
-            isComment.click()
+            // isComment.click()
             return
         })
         await iframe.waitForSelector(options.button_upload)

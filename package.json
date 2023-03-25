@@ -16,6 +16,7 @@
     "puppeteer-core": "^19.7.2"
   },
   "dependencies": {
+    "mongoose": "^7.0.3",
     "node-telegram-bot-api": "^0.61.0"
   }
 }
