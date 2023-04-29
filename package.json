@@ -1,0 +1,24 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "description": "Yonexdu0ra",
+  "main": "server.js",
+  "repository": "https://github.com/Yonexdu0ra/bot",
+  "author": "Yonedux0ra",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server"
+  },
+  "dependencies": {
+    "axios": "^1.3.4",
+    "express": "^4.18.2",
+    "mongoose": "^7.0.3",
+    "node-telegram-bot-api": "^0.61.0",
+    "puppeteer-core": "^19.8.3"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3",
+    "nodemon": "^2.0.22"
+  }
+}
