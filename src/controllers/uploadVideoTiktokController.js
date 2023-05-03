@@ -24,13 +24,13 @@ export default async function (msg, match) {
     }
     if (indexCommand !== 0) {
         return
-        // instruction_message(await this, chat_id)
+        // instruction_message(this, chat_id)
     }
     const isValue = match.input.split(isCommand)[1]
     if (!isValue) {
         // instruction_message(this, chat_id)
         this.sendMessage(chat_id,
-            `Vui lòng nhập đúng cú pháp: <b>URL Video Tiktok hoặc Douyin</b> | <b>Nội dung cho video mà bạn muốn đăng</b> \nTrong đó dấu <code>|</code> để ngăn cách url và nội dung `,
+            `Vui lòng nhập đúng theo cú pháp:/upload <b>URL Video Tiktok hoặc Douyin</b> | <b>Nội dung cho video mà bạn muốn đăng</b> \nTrong đó dấu <code>|</code> để ngăn cách url và nội dung `,
             {
                 reply_to_message_id: message_id,
                 parse_mode: "HTML"
@@ -64,8 +64,8 @@ export default async function (msg, match) {
     const browser = await puppeteer.launch(optionsBrowser)
     try {
         const page = await browser.newPage()
-        fileName = await downloadVideoTiktokNoWatermark(page, optionsDownloadVideoTiktokNoWatermark(url, downloadPath))
-        const isFile = await checkFileAndWaitDownload(downloadPath, fileName)
+        data = await downloadVideoTiktokNoWatermark(page, optionsDownloadVideoTiktokNoWatermark(url, downloadPath))
+        const isFile = await checkFileAndWaitDownload(downloadPath, data.fileName)
         if (isFile) {
             fileName = isFile
             await this.sendMessage(chat_id, `Xóa logo thành công`, { reply_to_message_id: message_id })
