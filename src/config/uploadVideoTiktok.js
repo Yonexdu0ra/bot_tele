@@ -2,9 +2,10 @@ export default (path_video, content) => ({
     creator: 'creator#',
     input: 'input[type=file]',
     path_video,
-    preview: "div.jsx-2907531398.preview",
+    preview: ".jsx-248602632.video-player-control",
     form: `div[data-offset-key].public-DraftStyleDefault-block.public-DraftStyleDefault-ltr`,
     button_upload: "button.css-y1m958",
+    button_editVideo: "button.css-ug6w5y",
     span: `span[data-text]`,
     modal: 'div.tiktok-modal__modal-title',
     content

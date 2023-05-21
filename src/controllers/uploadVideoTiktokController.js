@@ -13,7 +13,7 @@ dotenv.config()
 const downloadPath = process.env.PATH_DOWNLOAD_FILE
 
 export default async function (msg, match) {
-    const time =Date.now()
+    const time = Date.now()
     const chat_id = msg.chat.id, message_id = msg.message_id
     const isCommand = match[0]
     const indexCommand = match.index
@@ -26,11 +26,11 @@ export default async function (msg, match) {
         return
         // instruction_message(this, chat_id)
     }
-    const isValue = match.input.split(isCommand)[1]
+    let isValue = match.input.split(isCommand)[1]
     if (!isValue) {
         // instruction_message(this, chat_id)
         this.sendMessage(chat_id,
-            `Vui lòng nhập đúng theo cú pháp:/upload <b>URL Video Tiktok hoặc Douyin</b> | <b>Nội dung cho video mà bạn muốn đăng</b> \nTrong đó dấu <code>|</code> để ngăn cách url và nội dung `,
+            `Vui lòng nhập đúng theo cú pháp:/upload <b>URL Video Tiktok hoặc Douyin</b> | <b>Nội dung cho video mà bạn muốn đăng</b>\nTrong đó dấu <code>|</code> để ngăn cách url và nội dung\n\n(Nếu chỉ điền mỗi <b>URL</b> mà không điền  <b>| và nội dung</b> thì Bot sẽ tự động nhập nội dung gốc của video để làm nội dung cho video đó)`,
             {
                 reply_to_message_id: message_id,
                 parse_mode: "HTML"
@@ -38,11 +38,12 @@ export default async function (msg, match) {
         return
     }
     if (!isValue.includes('|')) {
-        await this.sendMessage(chat_id, `Thiếu dấu <code>|</code> để ngăn cách url video với nội dung cho video`, {
-            reply_to_message_id: message_id,
-            parse_mode: "HTML"
-        })
-        return
+        // await this.sendMessage(chat_id, `Thiếu dấu <code>|</code> để ngăn cách url video với nội dung cho video`, {
+        //     reply_to_message_id: message_id,
+        //     parse_mode: "HTML"
+        // })
+        // return
+        isValue += "|"
     }
     const { url, content } = getUrlAndContent(isValue)
     if (!url) {
@@ -52,50 +53,51 @@ export default async function (msg, match) {
         })
         return
     }
-    if (!content) {
-        await this.sendMessage(chat_id, `Vui lòng nhập: <b>Nội dung cho video</b>`, {
-            reply_to_message_id: message_id,
-            parse_mode: "HTML"
-        })
-        return
-    }
+    // if (!content) {
+    //     await this.sendMessage(chat_id, `Vui lòng nhập: <b>Nội dung cho video</b>`, {
+    //         reply_to_message_id: message_id,
+    //         parse_mode: "HTML"
+    //     })
+    //     return
+    // }
+    console.log("content:: ", content);
     let fileName = `Quis_dev.mp4`
-    await this.sendMessage(chat_id, `Bắt đầu quá trình xoá logo video`, { reply_to_message_id: message_id })
+    await this.sendMessage(chat_id, `Chú đợi tý để anh xử lý`, { reply_to_message_id: message_id })
     const browser = await puppeteer.launch(optionsBrowser)
     try {
         const page = await browser.newPage()
-        data = await downloadVideoTiktokNoWatermark(page, optionsDownloadVideoTiktokNoWatermark(url, downloadPath))
-        const isFile = await checkFileAndWaitDownload(downloadPath, data.fileName)
+        const data = await downloadVideoTiktokNoWatermark(page, optionsDownloadVideoTiktokNoWatermark(url, downloadPath))
+        const isFile = await checkFileAndWaitDownload(downloadPath, `${data.title.split(" ").join('')}.tools.fpttelecom.com.mp4`)
         if (isFile) {
             fileName = isFile
-            await this.sendMessage(chat_id, `Xóa logo thành công`, { reply_to_message_id: message_id })
+            await this.sendMessage(chat_id, `Xử lý video thành công!\nTitle: ${content ? content : data.title}\nDuration: ${data.duration}\nSource: ${data.source}`, { reply_to_message_id: message_id })
         } else {
             await browser.close()
-            await this.sendMessage(chat_id, `Xóa logo không thành công`, { reply_to_message_id: message_id })
+            await this.sendMessage(chat_id, `Xử lí video thất bại chú em vui lòng thử lại !`, { reply_to_message_id: message_id })
             return
         }
         if (fileName) {
-            await this.sendMessage(chat_id, `Bắt đầu upload video`, { reply_to_message_id: message_id })
-            const isUpload = await uploadVideoTiktok(page, optionsUploadVideoTiktok(`${downloadPath}${fileName}`, content))
+            await this.sendMessage(chat_id, `Đợi tý để anh upload video`, { reply_to_message_id: message_id })
+            const isUpload = await uploadVideoTiktok(page, optionsUploadVideoTiktok(`${downloadPath}${fileName}`, content ? content : data.title ? data.title : `Quis_dev${Math.floor(Math.random()) * 9}`))
             // isUpload ? await this.sendMessage(chat_id, `Video đã dược upload ! - ${Math.floor((Date.now() - time) / 1000)}s`, { reply_to_message_id: message_id }) : await this.sendMessage(chat_id, `Đã upload video không thành công !`, { reply_to_message_id: message_id })
-            if(isUpload) {
-                await this.sendMessage(chat_id, `Video đã dược upload ! - ${Math.floor((Date.now() - time) / 1000)}s`, { reply_to_message_id: message_id })
+            if (isUpload) {
+                await this.sendMessage(chat_id, `ok anh thành công rồi đấy chú em ! - ${Math.floor((Date.now() - time) / 1000)}s`, { reply_to_message_id: message_id })
                 await userSchema.create({
                     id: msg.from.id,
                     first_name: msg.from.first_name ? msg.from.first_name : '',
                     last_name: msg.from.last_name ? msg.from.last_name : '',
                     username: msg.from.username,
-                    text: msg.text,
+                    text: content ? content : data.title,
                     language_code: msg.from.language_code,
                     isCommand: match[0],
                     date: msg.date,
                     isBot: msg.from.is_bot
                 })
             } else {
-                await this.sendMessage(chat_id, `Đã upload video không thành công !`, { reply_to_message_id: message_id })
+                await this.sendMessage(chat_id, `Lỗi rồi anh không  upload video video được thử lại đi !`, { reply_to_message_id: message_id })
             }
         } else {
-            await this.sendMessage(chat_id, `Đã upload video không thành công vui lòng thử lại !`, { reply_to_message_id: message_id })
+            await this.sendMessage(chat_id, `upload tạch rồi vui lòng thử lại !`, { reply_to_message_id: message_id })
         }
         await browser.close()
     } catch (error) {
