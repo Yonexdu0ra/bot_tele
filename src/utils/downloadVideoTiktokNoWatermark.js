@@ -31,17 +31,26 @@ export default async function (page, options = {}) {
         //     token
         // })
         // console.log(data)
-        const fileName = `${data.title.split(" ").join('')}.tools.fpttelecom.com.mp4`
+        const fileName = `Yonexdu0ra_TikTok_Video_${Math.floor(Math.random()) * 100}.mp4`
         const writer = createWriteStream(`${options.dir}${fileName}`)
-        const urlVideo = data.medias.find(video => video.quality == "hd" || video.quality == "sd")
+        const video = data.medias.find(video => video.quality == "hd" || video.quality == "sd")
         const response = await axios({
-            url: urlVideo.url,
+            url: video.url,
             method: "GET",
             responseType: "stream"
         })
         response.data.pipe(writer)
         return new Promise((resolve, reject) => {
-            writer.on("finish", () => resolve(data));
+            writer.on("finish", () => resolve({
+                fileName,
+                url: data.url,
+                thumbnail: data.thumbnail,
+                title: data.title,
+                duration: data.duration,
+                source: data.source,
+                quality: video.quality,
+                formattedSize: video.formattedSize
+            }));
             writer.on("error", reject)
         })
     } catch (error) {

@@ -3,6 +3,7 @@ import puppeteer from "puppeteer-core"
 import optionsBrowser from "../config/browser.js"
 import checkFileAndRemove from "../utils/checkFileAndRemove.js"
 import checkFileAndWaitDownload from "../utils/checkFileAndWaitDownload.js"
+import checkAndGetFileName from "../utils/checkAndGetFileName.js"
 import getUrlAndContent from "../utils/getUrlAndContent.js"
 import downloadVideoTiktokNoWatermark from "../utils/downloadVideoTiktokNoWatermark.js"
 import optionsDownloadVideoTiktokNoWatermark from "../config/downloadVideoTiktokNoWatermark.js"
@@ -24,11 +25,9 @@ export default async function (msg, match) {
     }
     if (indexCommand !== 0) {
         return
-        // instruction_message(this, chat_id)
     }
     let isValue = match.input.split(isCommand)[1]
     if (!isValue) {
-        // instruction_message(this, chat_id)
         this.sendMessage(chat_id,
             `Vui lòng nhập đúng theo cú pháp:/upload <b>URL Video Tiktok hoặc Douyin</b> | <b>Nội dung cho video mà bạn muốn đăng</b>\nTrong đó dấu <code>|</code> để ngăn cách url và nội dung\n\n(Nếu chỉ điền mỗi <b>URL</b> mà không điền  <b>| và nội dung</b> thì Bot sẽ tự động nhập nội dung gốc của video để làm nội dung cho video đó)`,
             {
@@ -38,11 +37,7 @@ export default async function (msg, match) {
         return
     }
     if (!isValue.includes('|')) {
-        // await this.sendMessage(chat_id, `Thiếu dấu <code>|</code> để ngăn cách url video với nội dung cho video`, {
-        //     reply_to_message_id: message_id,
-        //     parse_mode: "HTML"
-        // })
-        // return
+        // thêm dấu | vào input để getUrlAndContent có thể hoạt động mà không bị lỗi
         isValue += "|"
     }
     let { url, content } = getUrlAndContent(isValue)
@@ -53,30 +48,31 @@ export default async function (msg, match) {
         })
         return
     }
-    // if (!content) {
-    //     await this.sendMessage(chat_id, `Vui lòng nhập: <b>Nội dung cho video</b>`, {
-    //         reply_to_message_id: message_id,
-    //         parse_mode: "HTML"
-    //     })
-    //     return
-    // }
-    let fileName = `Quis_dev.mp4`
+    if (!content) {
+        await this.sendMessage(chat_id, `Chú em đã không nhập nội dung cho video nên anh đành phải lấy nội dung của video gốc hoặc sẽ tự thêm nội dung cho video`, {
+            reply_to_message_id: message_id,
+            // parse_mode: "HTML"
+        })
+        // return
+    }
+    let fileName = `Yonexdu0ra_TikTok_Video.mp4`
     await this.sendMessage(chat_id, `Chú đợi tý để anh xử lý`, { reply_to_message_id: message_id })
     const browser = await puppeteer.launch(optionsBrowser)
     try {
         const page = await browser.newPage()
         const data = await downloadVideoTiktokNoWatermark(page, optionsDownloadVideoTiktokNoWatermark(url, downloadPath))
+        // qua trang upload video luôn để lúc qua ít bị lỗi với đoạn input bên hàm uploadVideoTiktok
         await page.goto(process.env.URL_UPLOAD_VIDEO_TIKTOK)
-        const isFile = await checkFileAndWaitDownload(downloadPath, `${data.title.split(" ").join('')}.tools.fpttelecom.com.mp4`)
+        const isFile = await checkAndGetFileName(downloadPath, data.fileName)
         if (isFile) {
             fileName = isFile
-            await this.sendMessage(chat_id, `Xử lý video thành công!\nTitle: <b>${content ? content : data.title}</b>\nDuration: <b>${data.duration}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
+            await this.sendMessage(chat_id, `Xử lý video thành công!\nTitle: <b>${content ? content : data.title}</b>\nQuality: <b>${data.quality}</b>\nDuration: <b>${data.duration}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
         } else {
             await browser.close()
             await this.sendMessage(chat_id, `Xử lí video thất bại chú em vui lòng thử lại !`, { reply_to_message_id: message_id })
             return
         }
-        content = content ? content : data.title ? data.title : `Quis_dev${Math.floor(Math.random()) * 9}`
+        content = content ? content : data.title ? data.title : `Yonexdu0ra_TikTok_Video ${Math.floor(Math.random()) * 100}`
         if (fileName) {
             await this.sendMessage(chat_id, `Đợi tý để anh upload video`, { reply_to_message_id: message_id })
             const isUpload = await uploadVideoTiktok(page, optionsUploadVideoTiktok(`${downloadPath}${fileName}`, content))

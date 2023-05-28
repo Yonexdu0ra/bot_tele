@@ -1,6 +1,7 @@
 import { readdir } from "fs"
 export default function (pathFile, filename, timeCheck = 2000) {
     return new Promise((resolve) => {
+      // console.log(filename)
           const interval = setInterval(() => {
                 readdir(pathFile, (err, data) => {
                       if (err) {
@@ -9,6 +10,7 @@ export default function (pathFile, filename, timeCheck = 2000) {
                             resolve(false)
                       }
                       const isDown = data.find(file => file.includes(filename))
+                      console.log(isDown)
                       if (isDown && isDown.includes(".crdownload")) {
                             return
                       } else {
