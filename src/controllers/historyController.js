@@ -21,6 +21,13 @@ export default async function (msg, match) {
                 })
             }])
         }
+        inline_keyboard.push([{
+            text: "Close",
+            callback_data: JSON.stringify({
+                case: "Close",
+                value: "Đã đóng"
+            })
+        }])
         await this.sendMessage(chat_id, `Bạn muốn xem `, {
             reply_markup: { inline_keyboard }
         })

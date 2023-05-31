@@ -31,7 +31,7 @@ export default async function (page, options = {}) {
         //     token
         // })
         // console.log(data)
-        const fileName = `Yonexdu0ra_TikTok_Video_${Math.floor(Math.random()) * 100}.mp4`
+        const fileName = `Yonexdu0ra_TikTok_Video_${Math.floor(Math.random() * 100)}.mp4`
         const writer = createWriteStream(`${options.dir}${fileName}`)
         const video = data.medias.find(video => video.quality == "hd" || video.quality == "sd")
         const response = await axios({

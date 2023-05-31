@@ -1,12 +1,12 @@
 import userSchema from "../../models/user.js"
-import getUrlAndContent from "../getUrlAndContent.js"
+// import getUrlAndContent from "../getUrlAndContent.js"
 export default async function (bot, { data, chat_id, message_id }) {
     try {
         const listData = await userSchema.find({ id: data.data }).exec()
         let text = ``
         for (const data of listData) {
             const isTime = new Date(data.createdAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
-            text += `Lúc: <b>${isTime}</b> <code>${data.username}</code> đã upload một video với nội dung là: <code>${data.text}</code>\n\n`
+            text += `Lúc: <b>${isTime}</b> <code>${data.username}</code> đã upload một video với nội dung là: <code>${data.text.replace(/<\/?[^>]+(>|$)/g, '(ký tự đặc biệt đã bị ẩn)')}</code>\n\n`
         }
         if (text.length <= 4096) {
             await bot.sendMessage(chat_id, text, {

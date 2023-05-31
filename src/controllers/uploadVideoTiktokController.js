@@ -2,7 +2,6 @@ import dotenv from "dotenv"
 import puppeteer from "puppeteer-core"
 import optionsBrowser from "../config/browser.js"
 import checkFileAndRemove from "../utils/checkFileAndRemove.js"
-import checkFileAndWaitDownload from "../utils/checkFileAndWaitDownload.js"
 import checkAndGetFileName from "../utils/checkAndGetFileName.js"
 import getUrlAndContent from "../utils/getUrlAndContent.js"
 import downloadVideoTiktokNoWatermark from "../utils/downloadVideoTiktokNoWatermark.js"
@@ -66,13 +65,14 @@ export default async function (msg, match) {
         const isFile = await checkAndGetFileName(downloadPath, data.fileName)
         if (isFile) {
             fileName = isFile
-            await this.sendMessage(chat_id, `Xử lý video thành công!\nTitle: <b>${content ? content : data.title}</b>\nQuality: <b>${data.quality}</b>\nDuration: <b>${data.duration}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
+            // await this.sendMessage(chat_id, `Xử lý video thành công!\nTitle: <b>${content ? content : data.title}</b>\nQuality: <b>${data.quality?.toLocaleUpperCase()}</b>\nDuration: <b>${data.duration}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
+            await this.sendMessage(chat_id, `Title: <code>${content ? content.replace(/<\/?[^>]+(>|$)/g, '') : data.title.replace(/<\/?[^>]+(>|$)/g, '')}</code>(Nếu có ký tự đặc biệt thì ở đây sẽ không hiển thị còn ở nội dung video vẫn sẽ giữ nguyên)\nQuality: <b>${data.quality?.toLocaleUpperCase()}</b>\nDuration: <b>${data.duration}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
         } else {
             await browser.close()
             await this.sendMessage(chat_id, `Xử lí video thất bại chú em vui lòng thử lại !`, { reply_to_message_id: message_id })
             return
         }
-        content = content ? content : data.title ? data.title : `Yonexdu0ra_TikTok_Video ${Math.floor(Math.random()) * 100}`
+        content = content ? content : data.title ? data.title : `Quis_73_crawler_video_${Math.floor(Math.random()*100)}`
         if (fileName) {
             await this.sendMessage(chat_id, `Đợi tý để anh upload video`, { reply_to_message_id: message_id })
             const isUpload = await uploadVideoTiktok(page, optionsUploadVideoTiktok(`${downloadPath}${fileName}`, content))
@@ -96,7 +96,6 @@ export default async function (msg, match) {
         } else {
             await this.sendMessage(chat_id, `upload tạch rồi vui lòng thử lại !`, { reply_to_message_id: message_id })
         }
-        console.log(Math.floor((Date.now() - time) / 1000),"s")
         await browser.close()
     } catch (error) {
         await browser.close()
