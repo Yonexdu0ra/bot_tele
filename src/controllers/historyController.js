@@ -10,14 +10,14 @@ export default async function (msg, match) {
     }
     if (indexCommand !== 0) { return }
     try {
-        const listUsers = await userSchema.distinct('id')
+        const listID = await userSchema.distinct('id')
         const inline_keyboard = []
-        for (const user of listUsers) {
+        for (const ID of listID) {
             inline_keyboard.push([{
-                text: `User: ${user}`,
+                text: `User: ${ID}`,
                 callback_data: JSON.stringify({
                     case: "History",
-                    data: user
+                    data: ID
                 })
             }])
         }

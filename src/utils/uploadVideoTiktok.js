@@ -1,6 +1,7 @@
 import checkLoginTiktok from "./checkLoginTiktok.js"
 import permissionSchema from "../models/permission.js"
 import typeContentTiktok from "./typeContentTiktok.js"
+import closeModal from "./closeModal.js"
 export default async function (page, options) {
     try {
         // await page.goto(process.env.URL_UPLOAD_VIDEO_TIKTOK)
@@ -13,42 +14,34 @@ export default async function (page, options) {
         const iframe = await page.frames().find(f => {
             return f.url().includes(options.creator)
         })
-        await iframe.waitForSelector("input")
+        await iframe.waitForSelector("input", { hidden: true })
         const inputElement = await iframe.$(options.input)
         await inputElement.evaluate((input) => {
             input.style.display = "block"
         })
         const listPermission = await permissionSchema.findOne()
         await inputElement.uploadFile(options.path_video)
-        // await inputElement.setInputFiles(options.path_video)
 
         await iframe.waitForSelector(options.preview, { timeout: (60 * (10 ** 4)) })
         await iframe.waitForSelector(options.span, { timeout: (60 * (10 ** 4)) })
         await typeContentTiktok({ page, iframe, options })
-        await iframe.evaluate((options) => {
-            const [isComment, isDuet, isStitch] = [...document.querySelectorAll("label")]
-            !options.isComment ? isComment.click() : null
-            !options.isDuet ? isDuet.click() : null
-            !options.isStitch ? isStitch.click() : null
+        const [isModalSaveVideo, isModalSplitVideo] = await Promise.all([
+            closeModal(iframe, options.button_close_modal),
+            closeModal(iframe, options.button_close_split_video)
+        ])
+
+
+        await iframe.evaluate(({ isComment, isDuet, isStitch }) => {
+            const [boxComment, boxDuet, boxStitch] = [...document.querySelectorAll("label")]
+            !isComment ? boxComment.click() : null
+            !isDuet ? boxDuet.click() : null
+            !isStitch ? boxStitch.click() : null
             return
         }, listPermission)
 
-        const isModalSaveVideo = await iframe.evaluate((selectorModal) => {
-            return new Promise((resolve) => {
-                const modal = document.querySelector(selectorModal)
-                if (modal) {
-                    modal.click()
-                    setTimeout(() => resolve(true), 1000)
-                }
-                resolve(false)
-            })
-        }, options.button_close_modal)
-        if (isModalSaveVideo) {
-            // await iframe.click(options.button_close_modal)
+        if (isModalSaveVideo || isModalSplitVideo) {
             await typeContentTiktok({ page, iframe, options })
         }
-        // await iframe.waitForSelector(options.button_close_modal)
-
         await iframe.waitForSelector(options.button_upload)
         await iframe.click(options.button_upload)
         await iframe.waitForSelector(options.modal, { timeout: 120000 })

@@ -8,6 +8,7 @@ export default (path_video, content) => ({
     button_editVideo: "button.css-ug6w5y",
     span: `span[data-text]`,
     button_close_modal: ".jsx-591861640.modalCloseButton",
+    button_close_split_video: "div.jsx-366267946.modal-header-btn-group > button.css-170cvvi",
     modal: 'div.tiktok-modal__modal-title',
     content
 })

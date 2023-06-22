@@ -3,16 +3,18 @@ import puppeteer from "puppeteer-core"
 import optionsBrowser from "../config/browser.js"
 import checkFileAndRemove from "../utils/checkFileAndRemove.js"
 import checkAndGetFileName from "../utils/checkAndGetFileName.js"
+import getDataDownload from "../utils/getDataDownload.js"
+import downloadVideo from "../utils/downloadVideo.js"
 import getUrlAndContent from "../utils/getUrlAndContent.js"
-import downloadVideoTiktokNoWatermark from "../utils/downloadVideoTiktokNoWatermark.js"
-import optionsDownloadVideoTiktokNoWatermark from "../config/downloadVideoTiktokNoWatermark.js"
+import optionsGetDataVideo from "../config/getDataVideo.js"
 import uploadVideoTiktok from "../utils/uploadVideoTiktok.js"
 import optionsUploadVideoTiktok from "../config/uploadVideoTiktok.js"
 import userSchema from "../models/user.js"
+import getTokenDownloadVideo from "../utils/getTokenDownloadVideo.js"
 dotenv.config()
-const downloadPath = process.env.PATH_DOWNLOAD_FILE
 
 export default async function (msg, match) {
+    const downloadPath = process.env.PATH_DOWNLOAD_FILE
     const time = Date.now()
     const chat_id = msg.chat.id, message_id = msg.message_id
     const isCommand = match[0]
@@ -37,7 +39,7 @@ export default async function (msg, match) {
     }
     if (!isValue.includes('|')) {
         // thêm dấu | vào input để getUrlAndContent có thể hoạt động mà không bị lỗi
-        isValue += "|"
+        isValue += " |"
     }
     let { url, content } = getUrlAndContent(isValue)
     if (!url) {
@@ -47,32 +49,46 @@ export default async function (msg, match) {
         })
         return
     }
-    if (!content) {
-        await this.sendMessage(chat_id, `Chú em đã không nhập nội dung cho video nên anh đành phải lấy nội dung của video gốc hoặc sẽ tự thêm nội dung cho video`, {
+    if (url.includes("|")) {
+        await this.sendMessage(chat_id, `Vui lòng không viết liền <b>|</b> với <b>URL video</b> khi bạn muốn nhập <b>Nội Dung cho Video</b>`, {
             reply_to_message_id: message_id,
-            // parse_mode: "HTML"
+            parse_mode: "HTML"
         })
-        // return
+        return
     }
     let fileName = `Yonexdu0ra_TikTok_Video.mp4`
     await this.sendMessage(chat_id, `Chú đợi tý để anh xử lý`, { reply_to_message_id: message_id })
     const browser = await puppeteer.launch(optionsBrowser)
     try {
         const page = await browser.newPage()
-        const data = await downloadVideoTiktokNoWatermark(page, optionsDownloadVideoTiktokNoWatermark(url, downloadPath))
-        // qua trang upload video luôn để lúc qua ít bị lỗi với đoạn input bên hàm uploadVideoTiktok
+        const options = optionsGetDataVideo(url)
+        const token = await getTokenDownloadVideo(page, options)
+        if (!token) {
+            await this.sendMessage(chat_id, `Lỗi rồi ông cháu ơi! OGC`, { reply_to_message_id: message_id })
+            await browser.close()
+            return
+        }
+        const infoVideo = await getDataDownload(token, options)
+        if (infoVideo.error) {
+            await this.sendMessage(chat_id, JSON.stringify(infoVideo.error));
+            await browser.close()
+            return
+        }
+        // qua trang upload video luôn để tải xong video thì upload luôn
         await page.goto(process.env.URL_UPLOAD_VIDEO_TIKTOK)
+        const data = await downloadVideo(infoVideo, downloadPath)
+
         const isFile = await checkAndGetFileName(downloadPath, data.fileName)
         if (isFile) {
             fileName = isFile
             // await this.sendMessage(chat_id, `Xử lý video thành công!\nTitle: <b>${content ? content : data.title}</b>\nQuality: <b>${data.quality?.toLocaleUpperCase()}</b>\nDuration: <b>${data.duration}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
-            await this.sendMessage(chat_id, `Title: <code>${content ? content.replace(/<\/?[^>]+(>|$)/g, '') : data.title.replace(/<\/?[^>]+(>|$)/g, '')}</code>(Nếu có ký tự đặc biệt thì ở đây sẽ không hiển thị còn ở nội dung video vẫn sẽ giữ nguyên)\nQuality: <b>${data.quality?.toLocaleUpperCase()}</b>\nDuration: <b>${data.duration}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
+            await this.sendMessage(chat_id, `Title: <code>${(content ? content : data.title.replace(/<\/?[^>]+(>|$)/g, '(ký tự đặc biệt)'))}</code>\nQuality: <b>${data.quality?.toLocaleUpperCase()}</b>\nDuration: <b>${data.duration}</b>\nSize: <b>${data.formattedSize}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
         } else {
             await browser.close()
             await this.sendMessage(chat_id, `Xử lí video thất bại chú em vui lòng thử lại !`, { reply_to_message_id: message_id })
             return
         }
-        content = content ? content : data.title ? data.title : `Quis_73_crawler_video_${Math.floor(Math.random()*100)}`
+        content = content ? content : data.title ? data.title : `Quis_73_crawler_video_${Math.floor(Math.random() * 100)}`
         if (fileName) {
             await this.sendMessage(chat_id, `Đợi tý để anh upload video`, { reply_to_message_id: message_id })
             const isUpload = await uploadVideoTiktok(page, optionsUploadVideoTiktok(`${downloadPath}${fileName}`, content))
@@ -97,11 +113,12 @@ export default async function (msg, match) {
             await this.sendMessage(chat_id, `upload tạch rồi vui lòng thử lại !`, { reply_to_message_id: message_id })
         }
         await browser.close()
+        return
     } catch (error) {
         await browser.close()
         console.log(error)
         await this.sendMessage(chat_id, JSON.stringify(error), { reply_to_message_id: message_id })
-        checkFileAndRemove(`${downloadPath}${fileName}`)
+        // checkFileAndRemove(`${downloadPath}${fileName}`)
     }
     finally {
         checkFileAndRemove(`${downloadPath}${fileName}`)

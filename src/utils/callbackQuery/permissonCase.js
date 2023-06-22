@@ -14,7 +14,7 @@ export default async function (bot, { data, chat_id, message_id }) {
         await bot.editMessageReplyMarkup({ inline_keyboard }, { chat_id, message_id })
     } catch (error) {
         console.log(error)
-        await bot.sendMessage(chat_id, JSON.stringify(error))
+        await bot.sendMessage(chat_id, "Chú em bấm từ từ thôi")
         return error
     }
 }

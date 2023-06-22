@@ -1,5 +1,3 @@
-import permission from "../models/permission.js"
-import userSchema from "../models/user.js"
 import permissionCase from "../utils/callbackQuery/permissonCase.js"
 import historyCase from "../utils/callbackQuery/historyCase.js"
 export default async function ({ message, data }) {
