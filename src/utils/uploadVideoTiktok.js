@@ -2,6 +2,8 @@ import checkLoginTiktok from "./checkLoginTiktok.js"
 import permissionSchema from "../models/permission.js"
 import typeContentTiktok from "./typeContentTiktok.js"
 import closeModal from "./closeModal.js"
+import optionPostingChedulem from "../config/setTimeUploadVideo.js"
+import postingChedule from "./postingChedule.js"
 export default async function (page, options) {
     try {
         // await page.goto(process.env.URL_UPLOAD_VIDEO_TIKTOK)
@@ -38,13 +40,15 @@ export default async function (page, options) {
             !isStitch ? boxStitch.click() : null
             return
         }, listPermission)
-
+        if (listPermission.isSetTime) {
+            optionPostingChedulem.date = listPermission.time_upload
+            await postingChedule(iframe, optionPostingChedulem)
+        }
         if (isModalSaveVideo || isModalSplitVideo) {
             await typeContentTiktok({ page, iframe, options })
         }
         await iframe.waitForSelector(options.button_upload)
         await iframe.click(options.button_upload)
-        await iframe.waitForSelector(options.modal, { timeout: 120000 })
         return true
     } catch (error) {
         console.log(`error upload:: `, error)

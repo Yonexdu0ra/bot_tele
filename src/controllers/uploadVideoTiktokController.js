@@ -9,6 +9,7 @@ import getUrlAndContent from "../utils/getUrlAndContent.js"
 import optionsGetDataVideo from "../config/getDataVideo.js"
 import uploadVideoTiktok from "../utils/uploadVideoTiktok.js"
 import optionsUploadVideoTiktok from "../config/uploadVideoTiktok.js"
+import permissionSchema from "../models/permission.js"
 import userSchema from "../models/user.js"
 import getTokenDownloadVideo from "../utils/getTokenDownloadVideo.js"
 dotenv.config()
@@ -95,17 +96,24 @@ export default async function (msg, match) {
             // isUpload ? await this.sendMessage(chat_id, `Video đã dược upload ! - ${Math.floor((Date.now() - time) / 1000)}s`, { reply_to_message_id: message_id }) : await this.sendMessage(chat_id, `Đã upload video không thành công !`, { reply_to_message_id: message_id })
             if (isUpload) {
                 await this.sendMessage(chat_id, `Ok video upload thành công rồi đấy chú em ! - ${Math.floor((Date.now() - time) / 1000)}s`, { reply_to_message_id: message_id })
-                await userSchema.create({
-                    id: msg.from.id,
-                    first_name: msg.from.first_name ? msg.from.first_name : '',
-                    last_name: msg.from.last_name ? msg.from.last_name : '',
-                    username: msg.from.username,
-                    text: content,
-                    language_code: msg.from.language_code,
-                    isCommand: match[0],
-                    date: msg.date,
-                    isBot: msg.from.is_bot
-                })
+               // reset thời gian upload video và lưu thông tin video upload
+                await Promise.all([
+                    permissionSchema.findOneAndUpdate({}, {
+                        isSetTime: false,
+                        time_upload: 0
+                    }),
+                    userSchema.create({
+                        id: msg.from.id,
+                        first_name: msg.from.first_name ? msg.from.first_name : '',
+                        last_name: msg.from.last_name ? msg.from.last_name : '',
+                        username: msg.from.username,
+                        text: content,
+                        language_code: msg.from.language_code,
+                        isCommand: match[0],
+                        date: msg.date,
+                        isBot: msg.from.is_bot
+                    })
+                ])
             } else {
                 await this.sendMessage(chat_id, `Lỗi rồi anh không  upload video được thử lại đi !`, { reply_to_message_id: message_id })
             }
