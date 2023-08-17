@@ -63,13 +63,15 @@ export default async function (msg, match) {
     try {
         const page = await browser.newPage()
         const options = optionsGetDataVideo(url)
-        const token = await getTokenDownloadVideo(page, options)
-        if (!token) {
-            await this.sendMessage(chat_id, `Lỗi rồi ông cháu ơi! OGC`, { reply_to_message_id: message_id })
-            await browser.close()
-            return
-        }
-        const infoVideo = await getDataDownload(token, options)
+        // const token = await getTokenDownloadVideo(page, options) 
+        // if (!token) {
+        //     await this.sendMessage(chat_id, `Lỗi rồi ông cháu ơi! OGC`, { reply_to_message_id: message_id })
+        //     await browser.close()
+        //     return
+        // }
+        // const infoVideo = await getDataDownload(token, options)
+        // đoạn code trên hiện chưa cần dùng do hiện chưa cần lấy token nên để token = "" nếu không được thì dùng đoạn code trên để lấy token
+        const infoVideo = await getDataDownload("", options) 
         if (infoVideo.error) {
             await this.sendMessage(chat_id, JSON.stringify(infoVideo.error));
             await browser.close()
@@ -78,18 +80,17 @@ export default async function (msg, match) {
         // qua trang upload video luôn để tải xong video thì upload luôn
         await page.goto(process.env.URL_UPLOAD_VIDEO_TIKTOK)
         const data = await downloadVideo(infoVideo, downloadPath)
-
+        content = content ? content : data.title 
         const isFile = await checkAndGetFileName(downloadPath, data.fileName)
         if (isFile) {
             fileName = isFile
             // await this.sendMessage(chat_id, `Xử lý video thành công!\nTitle: <b>${content ? content : data.title}</b>\nQuality: <b>${data.quality?.toLocaleUpperCase()}</b>\nDuration: <b>${data.duration}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
-            await this.sendMessage(chat_id, `Title: <code>${(content ? content : data.title.replace(/<\/?[^>]+(>|$)/g, '(ký tự đặc biệt)'))}</code>\nQuality: <b>${data.quality?.toLocaleUpperCase()}</b>\nDuration: <b>${data.duration}</b>\nSize: <b>${data.formattedSize}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
+            await this.sendMessage(chat_id, `Title: <code>${(content || data.title).replace(/<\/?[^>]+(>|$)/g, '(ký tự đặc biệt)')}</code>\nQuality: <b>${data.quality?.toLocaleUpperCase()}</b>\nDuration: <b>${data.duration}</b>\nSize: <b>${data.formattedSize}</b>\nSource: <b>${data.source}</b>`, { reply_to_message_id: message_id, parse_mode: "HTML" })
         } else {
             await browser.close()
             await this.sendMessage(chat_id, `Xử lí video thất bại chú em vui lòng thử lại !`, { reply_to_message_id: message_id })
             return
         }
-        content = content ? content : data.title ? data.title : `Quis_73_crawler_video_${Math.floor(Math.random() * 100)}`
         if (fileName) {
             await this.sendMessage(chat_id, `Đợi tý để anh upload video`, { reply_to_message_id: message_id })
             const isUpload = await uploadVideoTiktok(page, optionsUploadVideoTiktok(`${downloadPath}${fileName}`, content))

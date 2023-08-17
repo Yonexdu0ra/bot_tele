@@ -35,6 +35,7 @@ export default async function (msg, match) {
     try {
         const page = await browser.newPage()
         const options = optionsGetDataVideo(url)
+        console.log(options)
         const token = await getTokenDownloadVideo(page, options)
         if (!token) {
             // console.log(token)

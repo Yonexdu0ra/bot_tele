@@ -21,18 +21,9 @@ export default async function (page, options) {
         await inputElement.evaluate((input) => {
             input.style.display = "block"
         })
-        const listPermission = await permissionSchema.findOne()
         await inputElement.uploadFile(options.path_video)
-
-        await iframe.waitForSelector(options.preview, { timeout: (60 * (10 ** 4)) })
-        await iframe.waitForSelector(options.span, { timeout: (60 * (10 ** 4)) })
-        await typeContentTiktok({ page, iframe, options })
-        const [isModalSaveVideo, isModalSplitVideo] = await Promise.all([
-            closeModal(iframe, options.button_close_modal),
-            closeModal(iframe, options.button_close_split_video)
-        ])
-
-
+        const listPermission = await permissionSchema.findOne()
+        await iframe.waitForSelector("label")
         await iframe.evaluate(({ isComment, isDuet, isStitch }) => {
             const [boxComment, boxDuet, boxStitch] = [...document.querySelectorAll("label")]
             !isComment ? boxComment.click() : null
@@ -44,11 +35,32 @@ export default async function (page, options) {
             optionPostingChedulem.date = listPermission.time_upload
             await postingChedule(iframe, optionPostingChedulem)
         }
+
+        await iframe.waitForSelector(options.preview, { timeout: (60 * (10 ** 4)) })
+        
+        await iframe.waitForSelector(options.span, { timeout: (60 * (10 ** 4)) })
+        await typeContentTiktok({ page, iframe, options })
+        
+        const [isModalSaveVideo, isModalSplitVideo] = await Promise.all([
+            closeModal(iframe, options.button_close_modal),
+            closeModal(iframe, options.button_close_split_video)
+        ])
+
+
         if (isModalSaveVideo || isModalSplitVideo) {
             await typeContentTiktok({ page, iframe, options })
         }
-        await iframe.waitForSelector(options.button_upload)
-        await iframe.click(options.button_upload)
+        const btnUpload = await iframe.$(options.button_upload)
+
+        await btnUpload.evaluate(btn => {
+            // cho chậm lại 2s để đỡ lỗi không click được btn
+            return new Promise(resolve => setTimeout(() => { 
+                btn.click()
+                resolve()
+             }, 2000))
+        })
+        
+        await iframe.waitForSelector(options.modal)
         return true
     } catch (error) {
         console.log(`error upload:: `, error)
